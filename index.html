@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MegaControl — Gestão de Megas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2234;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f4ff;
+    --text2: #8892aa;
+    --text3: #5a6477;
+    --green: #00e5a0;
+    --green-dim: rgba(0,229,160,0.12);
+    --red: #ff4d6d;
+    --red-dim: rgba(255,77,109,0.12);
+    --blue: #4d9eff;
+    --blue-dim: rgba(77,158,255,0.12);
+    --amber: #ffb347;
+    --amber-dim: rgba(255,179,71,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo span { color: var(--green); }
+  .header-meta { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); }
+
+  /* NAV */
+  nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .nav-tab {
+    padding: 14px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: 'Syne', sans-serif;
+  }
+  .nav-tab:hover { color: var(--text2); }
+  .nav-tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+  /* LAYOUT */
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 1.25rem;
+  }
+
+  /* METRICS */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .metric {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .metric::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--accent, var(--green)); }
+  .metric-label { font-size: 11px; color: var(--text3); margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+  .metric-value { font-size: 26px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .metric-sub { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: 'DM Mono', monospace; }
+
+  /* FORMS */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  input, select {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'DM Mono', monospace;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--green); }
+  input::placeholder { color: var(--text3); }
+  select option { background: var(--bg2); }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Syne', sans-serif;
+    border: none;
+  }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-outline { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+  .btn-outline:hover { border-color: var(--green); color: var(--green); }
+  .btn-red { background: var(--red-dim); border: 1px solid var(--red); color: var(--red); padding: 5px 12px; font-size: 12px; }
+  .btn-red:hover { background: var(--red); color: #fff; }
+
+  /* PREVIEW CALC */
+  .calc-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    padding: 1rem;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    margin: 1rem 0;
+  }
+  .calc-item { text-align: center; }
+  .calc-item-label { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; margin-bottom: 4px; }
+  .calc-item-value { font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+  }
+  td {
+    padding: 12px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* BADGES */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+  }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-amber { background: var(--amber-dim); color: var(--amber); }
+
+  /* CHARTS */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  @media(max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } }
+  .chart-wrap { position: relative; height: 240px; }
+
+  /* EMPTY */
+  .empty { text-align: center; padding: 3rem; color: var(--text3); font-family: 'DM Mono', monospace; font-size: 13px; }
+  .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+  /* COLAB CARD */
+  .colab-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .colab-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .colab-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--green-dim);
+    border: 1px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: var(--green);
+    font-family: 'DM Mono', monospace;
+  }
+  .colab-name { font-size: 15px; font-weight: 600; }
+  .colab-meta { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .colab-stats { display: flex; gap: 12px; margin-top: 4px; }
+  .colab-stat { font-size: 11px; font-family: 'DM Mono', monospace; }
+  .colab-stat span { color: var(--green); font-weight: 600; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 2rem; right: 2rem;
+    background: var(--bg2); border: 1px solid var(--green);
+    color: var(--green); padding: 12px 20px;
+    border-radius: var(--radius-sm); font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.3s; z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .amber { color: var(--amber); }
+  .text2 { color: var(--text2); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+  .flex-end { display: flex; justify-content: flex-end; gap: 8px; }
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media(max-width: 600px) {
+    main { padding: 1rem; }
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+    header { padding: 0 1rem; }
+    nav { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Mega<span>Control</span></div>
+  <div class="header-meta" id="header-date"></div>
+</header>
+
+<nav>
+  <button class="nav-tab active" onclick="showPage('painel')">Painel</button>
+  <button class="nav-tab" onclick="showPage('registo')">Registar</button>
+  <button class="nav-tab" onclick="showPage('colaboradores')">Colaboradores</button>
+  <button class="nav-tab" onclick="showPage('historico')">Histórico</button>
+  <button class="nav-tab" onclick="showPage('config')">Configurações</button>
+</nav>
+
+<main>
+
+  <!-- PAINEL -->
+  <div id="page-painel" class="page active">
+    <div class="metrics-grid" id="metrics-top"></div>
+    <div class="charts-grid">
+      <div class="card">
+        <div class="card-title">Lucro por colaborador (MT)</div>
+        <div class="chart-wrap"><canvas id="chartLucro" role="img" aria-label="Lucro por colaborador"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">MB enviados vs vendidos</div>
+        <div class="chart-wrap"><canvas id="chartMB" role="img" aria-label="MB enviados vs vendidos"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Resumo por colaborador</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Colaborador</th><th>MB enviados</th><th>MB vendidos</th><th>Saldo MB</th><th>Receita</th><th>Custo</th><th>Lucro</th><th>Estado</th></tr></thead>
+          <tbody id="resumo-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTO -->
+  <div id="page-registo" class="page">
+    <div class="card">
+      <div class="card-title">Registar venda</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Colaborador</label>
+          <select id="reg-colab"></select>
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="reg-data">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>MB enviados ao colaborador</label>
+          <input type="number" id="reg-env" placeholder="ex: 10240" min="0" step="1" oninput="calcPreview()">
+        </div>
+        <div class="form-group">
+          <label>MB vendidos pelo colaborador</label>
+          <input type="number" id="reg-vend" placeholder="ex: 8192" min="0" step="1" oninput="calcPreview()">
+        </div>
+        <div class="form-group">
+          <label>Preço de venda por GB (MT)</label>
+          <input type="number" id="reg-preco" placeholder="25" value="25" min="0" step="0.1" oninput="calcPreview()">
+        </div>
+      </div>
+      <div class="calc-preview" id="calc-preview" style="display:none;">
+        <div class="calc-item"><div class="calc-item-label">Receita</div><div class="calc-item-value green" id="prev-receita">—</div></div>
+        <div class="calc-item"><div class="calc-item-label">Custo</div><div class="calc-item-value red" id="prev-custo">—</div></div>
+        <div class="calc-item"><div class="calc-item-label">Lucro</div><div class="calc-item-value" id="prev-lucro">—</div></div>
+        <div class="calc-item"><div class="calc-item-label">Saldo MB</div><div class="calc-item-value amber" id="prev-saldo">—</div></div>
+        <div class="calc-item"><div class="calc-item-label">MB → GB</div><div class="calc-item-value text2" id="prev-gb">—</div></div>
+      </div>
+      <div class="flex-end">
+        <button class="btn btn-green" onclick="registarVenda()">Registar venda</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Enviar megas a colaborador</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Colaborador</label>
+          <select id="env-colab"></select>
+        </div>
+        <div class="form-group">
+          <label>MB a enviar</label>
+          <input type="number" id="env-mb" placeholder="ex: 10240" min="0" step="1" oninput="calcEnvio()">
+        </div>
+        <div class="form-group">
+          <label>Custo estimado</label>
+          <input type="text" id="env-custo-prev" readonly placeholder="—" style="color:var(--amber);">
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--text3); font-family:'DM Mono',monospace; margin-bottom:1rem;" id="env-info">
+        Base: 10240MB = 225MT → <span id="env-mt-per-mb">0.0220MT/MB</span>
+      </div>
+      <div class="flex-end">
+        <button class="btn btn-outline" onclick="registarEnvio()">Registar envio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLABORADORES -->
+  <div id="page-colaboradores" class="page">
+    <div class="card">
+      <div class="card-title">Adicionar colaborador</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nome</label>
+          <input type="text" id="colab-nome" placeholder="Nome completo">
+        </div>
+        <div class="form-group">
+          <label>Número WhatsApp</label>
+          <input type="text" id="colab-tel" placeholder="ex: 841234567">
+        </div>
+        <div class="form-group" style="justify-content:flex-end; padding-top:18px;">
+          <button class="btn btn-green" onclick="addColab()">Adicionar</button>
+        </div>
+      </div>
+    </div>
+    <div id="colab-grid-wrap"></div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div id="page-historico" class="page">
+    <div class="card">
+      <div class="section-header">
+        <div class="card-title" style="margin:0;">Histórico de transacções</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="filtro-colab" onchange="renderHistorico()" style="width:auto;font-size:13px;">
+            <option value="">Todos os colaboradores</option>
+          </select>
+          <select id="filtro-tipo" onchange="renderHistorico()" style="width:auto;font-size:13px;">
+            <option value="">Todos os tipos</option>
+            <option value="venda">Vendas</option>
+            <option value="envio">Envios</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Tipo</th><th>Colaborador</th><th>MB env.</th><th>MB vend.</th><th>Saldo</th><th>Receita</th><th>Custo</th><th>Lucro</th><th></th></tr></thead>
+          <tbody id="historico-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div id="page-config" class="page">
+    <div class="card">
+      <div class="card-title">Configurações de preços</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>MB por pacote enviado ao colaborador</label>
+          <input type="number" id="cfg-mb-pacote" value="10240" min="1">
+        </div>
+        <div class="form-group">
+          <label>Custo do pacote (MT)</label>
+          <input type="number" id="cfg-custo-pacote" value="225" min="0" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Preço venda padrão por GB (MT)</label>
+          <input type="number" id="cfg-preco-gb" value="25" min="0" step="0.1">
+        </div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin:1rem 0;font-family:'DM Mono',monospace;font-size:13px;" id="cfg-preview">
+      </div>
+      <div class="flex-end">
+        <button class="btn btn-green" onclick="saveConfig()">Guardar configurações</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Dados</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="exportData()">Exportar dados (JSON)</button>
+        <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">Importar dados (JSON)</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+        <button class="btn btn-red" style="margin-left:auto;" onclick="clearData()">Limpar todos os dados</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let cfg = JSON.parse(localStorage.getItem('mc_cfg') || '{"mbPacote":10240,"custoPacote":225,"precoGb":25}');
+let colabs = JSON.parse(localStorage.getItem('mc_colabs') || '[]');
+let transacs = JSON.parse(localStorage.getItem('mc_transacs') || '[]');
+let charts = {};
+
+function save() {
+  localStorage.setItem('mc_cfg', JSON.stringify(cfg));
+  localStorage.setItem('mc_colabs', JSON.stringify(colabs));
+  localStorage.setItem('mc_transacs', JSON.stringify(transacs));
+}
+
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = isErr ? 'var(--red)' : 'var(--green)';
+  t.style.color = isErr ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function costPerMB() { return cfg.custoPacote / cfg.mbPacote; }
+
+function showPage(p) {
+  document.querySelectorAll('.page,.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.querySelector(`[onclick="showPage('${p}')"]`).classList.add('active');
+  if (p === 'painel') renderPainel();
+  if (p === 'historico') renderHistorico();
+  if (p === 'registo') { populateSelects(); calcPreview(); }
+  if (p === 'colaboradores') renderColabs();
+  if (p === 'config') renderConfig();
+}
+
+function populateSelects() {
+  ['reg-colab','env-colab'].forEach(id => {
+    const s = document.getElementById(id);
+    s.innerHTML = colabs.length
+      ? colabs.map(c => `<option value="${c.id}">${c.nome}</option>`).join('')
+      : '<option value="">— Adiciona colaboradores primeiro —</option>';
+  });
+  const fc = document.getElementById('filtro-colab');
+  if (fc) fc.innerHTML = '<option value="">Todos</option>' + colabs.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+}
+
+// ── COLABORADORES
+function addColab() {
+  const nome = document.getElementById('colab-nome').value.trim();
+  const tel = document.getElementById('colab-tel').value.trim();
+  if (!nome) { toast('Insere o nome do colaborador', true); return; }
+  colabs.push({ id: Date.now(), nome, tel });
+  save();
+  document.getElementById('colab-nome').value = '';
+  document.getElementById('colab-tel').value = '';
+  renderColabs();
+  toast('Colaborador adicionado!');
+}
+
+function removerColab(id) {
+  if (!confirm('Remover colaborador e todas as suas transacções?')) return;
+  colabs = colabs.filter(c => c.id !== id);
+  transacs = transacs.filter(t => t.colabId !== id);
+  save();
+  renderColabs();
+  toast('Colaborador removido');
+}
+
+function renderColabs() {
+  const el = document.getElementById('colab-grid-wrap');
+  if (!colabs.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">👥</div>Sem colaboradores ainda</div>'; return; }
+  const stats = colabs.map(c => {
+    const ts = transacs.filter(t => t.colabId === c.id && t.tipo === 'venda');
+    const mbEnv = ts.reduce((s, t) => s + t.mbEnv, 0);
+    const mbVend = ts.reduce((s, t) => s + t.mbVend, 0);
+    const lucro = ts.reduce((s, t) => s + t.lucro, 0);
+    return { ...c, mbEnv, mbVend, lucro };
+  });
+  el.innerHTML = '<div class="colab-grid">' + stats.map(c => `
+    <div class="colab-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div class="colab-avatar">${c.nome.slice(0,2).toUpperCase()}</div>
+        <button class="btn btn-red" onclick="removerColab(${c.id})">Remover</button>
+      </div>
+      <div class="colab-name">${c.nome}</div>
+      <div class="colab-meta">${c.tel || 'Sem número'}</div>
+      <hr class="divider" style="margin:8px 0;">
+      <div class="colab-stats">
+        <div class="colab-stat">Enviados: <span>${c.mbEnv.toLocaleString()} MB</span></div>
+        <div class="colab-stat">Vendidos: <span>${c.mbVend.toLocaleString()} MB</span></div>
+      </div>
+      <div class="colab-stat">Lucro: <span style="color:${c.lucro>=0?'var(--green)':'var(--red)'};">${c.lucro.toFixed(0)} MT</span></div>
+    </div>`).join('') + '</div>';
+}
+
+// ── REGISTO
+function calcPreview() {
+  const mbEnv = parseFloat(document.getElementById('reg-env').value) || 0;
+  const mbVend = parseFloat(document.getElementById('reg-vend').value) || 0;
+  const precoGb = parseFloat(document.getElementById('reg-preco').value) || cfg.precoGb;
+  if (mbEnv === 0 && mbVend === 0) { document.getElementById('calc-preview').style.display = 'none'; return; }
+  const gbVend = mbVend / 1024;
+  const receita = gbVend * precoGb;
+  const custo = mbEnv * costPerMB();
+  const lucro = receita - custo;
+  const saldo = mbEnv - mbVend;
+  document.getElementById('calc-preview').style.display = 'grid';
+  document.getElementById('prev-receita').textContent = receita.toFixed(0) + ' MT';
+  document.getElementById('prev-custo').textContent = custo.toFixed(0) + ' MT';
+  document.getElementById('prev-lucro').textContent = lucro.toFixed(0) + ' MT';
+  document.getElementById('prev-lucro').style.color = lucro >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('prev-saldo').textContent = saldo.toLocaleString() + ' MB';
+  document.getElementById('prev-gb').textContent = (mbVend / 1024).toFixed(2) + ' GB';
+}
+
+function calcEnvio() {
+  const mb = parseFloat(document.getElementById('env-mb').value) || 0;
+  const custo = mb * costPerMB();
+  document.getElementById('env-custo-prev').value = custo > 0 ? custo.toFixed(0) + ' MT' : '';
+  document.getElementById('env-mt-per-mb').textContent = costPerMB().toFixed(4) + ' MT/MB';
+}
+
+function registarVenda() {
+  const colabId = parseInt(document.getElementById('reg-colab').value);
+  const data = document.getElementById('reg-data').value || new Date().toISOString().slice(0, 10);
+  const mbEnv = parseFloat(document.getElementById('reg-env').value) || 0;
+  const mbVend = parseFloat(document.getElementById('reg-vend').value) || 0;
+  const precoGb = parseFloat(document.getElementById('reg-preco').value) || cfg.precoGb;
+  if (!colabId || mbEnv <= 0) { toast('Preenche todos os campos obrigatórios', true); return; }
+  const gbVend = mbVend / 1024;
+  const receita = gbVend * precoGb;
+  const custo = mbEnv * costPerMB();
+  const lucro = receita - custo;
+  transacs.push({ id: Date.now(), tipo: 'venda', colabId, data, mbEnv, mbVend, precoGb, receita, custo, lucro });
+  save();
+  document.getElementById('reg-env').value = '';
+  document.getElementById('reg-vend').value = '';
+  document.getElementById('calc-preview').style.display = 'none';
+  toast('Venda registada! Lucro: ' + lucro.toFixed(0) + ' MT');
+}
+
+function registarEnvio() {
+  const colabId = parseInt(document.getElementById('env-colab').value);
+  const mb = parseFloat(document.getElementById('env-mb').value) || 0;
+  if (!colabId || mb <= 0) { toast('Preenche os campos', true); return; }
+  const custo = mb * costPerMB();
+  const data = new Date().toISOString().slice(0, 10);
+  transacs.push({ id: Date.now(), tipo: 'envio', colabId, data, mbEnv: mb, mbVend: 0, precoGb: 0, receita: 0, custo, lucro: -custo });
+  save();
+  document.getElementById('env-mb').value = '';
+  document.getElementById('env-custo-prev').value = '';
+  toast('Envio registado: ' + mb.toLocaleString() + ' MB → ' + custo.toFixed(0) + ' MT');
+}
+
+// ── PAINEL
+function renderPainel() {
+  const vendas = transacs.filter(t => t.tipo === 'venda');
+  const totalMbEnv = vendas.reduce((s, t) => s + t.mbEnv, 0);
+  const totalMbVend = vendas.reduce((s, t) => s + t.mbVend, 0);
+  const totalReceita = vendas.reduce((s, t) => s + t.receita, 0);
+  const totalCusto = vendas.reduce((s, t) => s + t.custo, 0);
+  const totalLucro = vendas.reduce((s, t) => s + t.lucro, 0);
+  const saldoMb = totalMbEnv - totalMbVend;
+
+  document.getElementById('metrics-top').innerHTML = `
+    <div class="metric" style="--accent:var(--blue)">
+      <div class="metric-label">MB enviados</div>
+      <div class="metric-value blue">${totalMbEnv.toLocaleString()}</div>
+      <div class="metric-sub">${(totalMbEnv/1024).toFixed(2)} GB</div>
+    </div>
+    <div class="metric" style="--accent:var(--amber)">
+      <div class="metric-label">MB vendidos</div>
+      <div class="metric-value amber">${totalMbVend.toLocaleString()}</div>
+      <div class="metric-sub">${(totalMbVend/1024).toFixed(2)} GB</div>
+    </div>
+    <div class="metric" style="--accent:var(--green)">
+      <div class="metric-label">Receita total</div>
+      <div class="metric-value green">${totalReceita.toFixed(0)} MT</div>
+      <div class="metric-sub">Custo: ${totalCusto.toFixed(0)} MT</div>
+    </div>
+    <div class="metric" style="--accent:${totalLucro >= 0 ? 'var(--green)' : 'var(--red)'}">
+      <div class="metric-label">Lucro total</div>
+      <div class="metric-value ${totalLucro >= 0 ? 'green' : 'red'}">${totalLucro.toFixed(0)} MT</div>
+      <div class="metric-sub">Saldo: ${saldoMb.toLocaleString()} MB</div>
+    </div>`;
+
+  const resumos = colabs.map(c => {
+    const v = transacs.filter(t => t.colabId === c.id && t.tipo === 'venda');
+    const mbEnv = v.reduce((s, t) => s + t.mbEnv, 0);
+    const mbVend = v.reduce((s, t) => s + t.mbVend, 0);
+    const receita = v.reduce((s, t) => s + t.receita, 0);
+    const custo = v.reduce((s, t) => s + t.custo, 0);
+    const lucro = v.reduce((s, t) => s + t.lucro, 0);
+    return { ...c, mbEnv, mbVend, receita, custo, lucro, saldo: mbEnv - mbVend };
+  });
+
+  document.getElementById('resumo-body').innerHTML = resumos.length
+    ? resumos.map(r => `<tr>
+        <td>${r.nome}</td>
+        <td>${r.mbEnv.toLocaleString()} MB</td>
+        <td>${r.mbVend.toLocaleString()} MB</td>
+        <td class="${r.saldo > 0 ? 'amber' : 'green'}">${r.saldo.toLocaleString()} MB</td>
+        <td class="green">${r.receita.toFixed(0)} MT</td>
+        <td class="red">${r.custo.toFixed(0)} MT</td>
+        <td><strong class="${r.lucro >= 0 ? 'green' : 'red'}">${r.lucro.toFixed(0)} MT</strong></td>
+        <td><span class="badge ${r.lucro > 0 ? 'badge-green' : r.lucro < 0 ? 'badge-red' : 'badge-amber'}">${r.lucro > 0 ? 'Lucro' : r.lucro < 0 ? 'Prejuízo' : 'Zero'}</span></td>
+      </tr>`).join('')
+    : '<tr><td colspan="8" class="empty">Sem dados</td></tr>';
+
+  const labels = resumos.map(r => r.nome);
+  const lucros = resumos.map(r => Math.round(r.lucro));
+  const mbEnvs = resumos.map(r => r.mbEnv);
+  const mbVends = resumos.map(r => r.mbVend);
+
+  if (charts.lucro) charts.lucro.destroy();
+  if (charts.mb) charts.mb.destroy();
+
+  charts.lucro = new Chart(document.getElementById('chartLucro'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Lucro (MT)', data: lucros, backgroundColor: lucros.map(l => l >= 0 ? '#00e5a0' : '#ff4d6d'), borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8892aa' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#8892aa', callback: v => v + ' MT' }, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+  });
+
+  charts.mb = new Chart(document.getElementById('chartMB'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Enviados (MB)', data: mbEnvs, backgroundColor: '#4d9eff', borderRadius: 4 }, { label: 'Vendidos (MB)', data: mbVends, backgroundColor: '#00e5a0', borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8892aa', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: '#8892aa' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#8892aa', callback: v => v + ' MB' }, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+  });
+}
+
+// ── HISTÓRICO
+function renderHistorico() {
+  populateSelects();
+  const filtroColab = parseInt(document.getElementById('filtro-colab').value) || 0;
+  const filtroTipo = document.getElementById('filtro-tipo').value;
+  let dados = [...transacs];
+  if (filtroColab) dados = dados.filter(t => t.colabId === filtroColab);
+  if (filtroTipo) dados = dados.filter(t => t.tipo === filtroTipo);
+  dados.sort((a, b) => b.data.localeCompare(a.data));
+
+  document.getElementById('historico-body').innerHTML = dados.length
+    ? dados.map(t => {
+        const c = colabs.find(x => x.id === t.colabId);
+        return `<tr>
+          <td>${t.data}</td>
+          <td><span class="badge ${t.tipo === 'venda' ? 'badge-green' : 'badge-amber'}">${t.tipo}</span></td>
+          <td>${c?.nome || '—'}</td>
+          <td>${t.mbEnv.toLocaleString()} MB</td>
+          <td>${t.mbVend.toLocaleString()} MB</td>
+          <td class="amber">${(t.mbEnv - t.mbVend).toLocaleString()} MB</td>
+          <td class="green">${t.receita.toFixed(0)} MT</td>
+          <td class="red">${t.custo.toFixed(0)} MT</td>
+          <td><strong class="${t.lucro >= 0 ? 'green' : 'red'}">${t.lucro.toFixed(0)} MT</strong></td>
+          <td><button class="btn btn-red" onclick="removerTransac(${t.id})">×</button></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="10" class="empty">Sem registos</td></tr>';
+}
+
+function removerTransac(id) {
+  if (!confirm('Remover este registo?')) return;
+  transacs = transacs.filter(t => t.id !== id);
+  save();
+  renderHistorico();
+  toast('Registo removido');
+}
+
+// ── CONFIG
+function renderConfig() {
+  document.getElementById('cfg-mb-pacote').value = cfg.mbPacote;
+  document.getElementById('cfg-custo-pacote').value = cfg.custoPacote;
+  document.getElementById('cfg-preco-gb').value = cfg.precoGb;
+  updateCfgPreview();
+  ['cfg-mb-pacote', 'cfg-custo-pacote', 'cfg-preco-gb'].forEach(id => {
+    document.getElementById(id).oninput = updateCfgPreview;
+  });
+}
+
+function updateCfgPreview() {
+  const mb = parseFloat(document.getElementById('cfg-mb-pacote').value) || 10240;
+  const custo = parseFloat(document.getElementById('cfg-custo-pacote').value) || 225;
+  const precoGb = parseFloat(document.getElementById('cfg-preco-gb').value) || 25;
+  const cpMb = custo / mb;
+  const gb = mb / 1024;
+  const receita = gb * precoGb;
+  const lucro = receita - custo;
+  document.getElementById('cfg-preview').innerHTML = `
+    <div style="color:var(--text2);margin-bottom:8px;">Simulação com ${mb.toLocaleString()} MB (${gb.toFixed(2)} GB):</div>
+    <div>Custo por MB: <span style="color:var(--red);">${cpMb.toFixed(4)} MT</span></div>
+    <div>Receita se vender tudo a ${precoGb}MT/GB: <span style="color:var(--green);">${receita.toFixed(0)} MT</span></div>
+    <div>Custo total: <span style="color:var(--red);">${custo.toFixed(0)} MT</span></div>
+    <div>Lucro esperado: <span style="color:${lucro>=0?'var(--green)':'var(--red)'}; font-weight:700;">${lucro.toFixed(0)} MT</span></div>`;
+}
+
+function saveConfig() {
+  cfg.mbPacote = parseFloat(document.getElementById('cfg-mb-pacote').value) || 10240;
+  cfg.custoPacote = parseFloat(document.getElementById('cfg-custo-pacote').value) || 225;
+  cfg.precoGb = parseFloat(document.getElementById('cfg-preco-gb').value) || 25;
+  save();
+  toast('Configurações guardadas!');
+}
+
+// ── EXPORT / IMPORT
+function exportData() {
+  const data = JSON.stringify({ cfg, colabs, transacs }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'megacontrol_backup_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  toast('Dados exportados!');
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (d.colabs) colabs = d.colabs;
+      if (d.transacs) transacs = d.transacs;
+      if (d.cfg) cfg = d.cfg;
+      save();
+      toast('Dados importados com sucesso!');
+      showPage('painel');
+    } catch { toast('Erro ao importar ficheiro', true); }
+  };
+  reader.readAsText(file);
+}
+
+function clearData() {
+  if (!confirm('Tens a certeza? Todos os dados serão apagados permanentemente!')) return;
+  colabs = []; transacs = [];
+  save();
+  toast('Dados apagados');
+  renderPainel();
+}
+
+// ── INIT
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+document.getElementById('reg-data').value = new Date().toISOString().slice(0, 10);
+populateSelects();
+renderPainel();
+</script>
+</body>
+</html>
