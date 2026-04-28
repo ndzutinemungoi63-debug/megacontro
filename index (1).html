@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MegaControl</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:#07090f;--bg2:#0e1220;--bg3:#151c2e;--bg4:#1c2540;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e8eeff;--text2:#7a86a0;--text3:#3d4a63;
+  --green:#00e5a0;--green-d:rgba(0,229,160,0.12);
+  --red:#ff4d6d;--red-d:rgba(255,77,109,0.12);
+  --blue:#4d9eff;--blue-d:rgba(77,158,255,0.12);
+  --amber:#ffb347;--amber-d:rgba(255,179,71,0.12);
+  --r:12px;--r-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px;}
+
+/* AUTH */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.auth-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:2.5rem;width:100%;max-width:420px;}
+.auth-logo{font-size:28px;font-weight:800;margin-bottom:8px;}
+.auth-logo span{color:var(--green);}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:2rem;font-family:'DM Mono',monospace;}
+.auth-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:1.5rem;}
+.auth-tab{flex:1;padding:10px;font-size:13px;font-weight:600;text-align:center;cursor:pointer;background:transparent;color:var(--text2);border:none;font-family:'Syne',sans-serif;transition:all .2s;}
+.auth-tab.active{background:var(--bg4);color:var(--green);}
+
+/* FORMS */
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;}
+label{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
+input,select,textarea{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;width:100%;transition:border-color .2s;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--green);}
+input::placeholder{color:var(--text3);}
+select option{background:var(--bg2);}
+.btn{padding:11px 22px;border-radius:var(--r-sm);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Syne',sans-serif;border:none;letter-spacing:.02em;}
+.btn-green{background:var(--green);color:#000;}
+.btn-green:hover{opacity:.85;transform:translateY(-1px);}
+.btn-outline{background:transparent;border:1px solid var(--border2);color:var(--text2);}
+.btn-outline:hover{border-color:var(--green);color:var(--green);}
+.btn-red{background:var(--red-d);border:1px solid var(--red);color:var(--red);padding:5px 12px;font-size:12px;}
+.btn-red:hover{background:var(--red);color:#fff;}
+.btn-full{width:100%;}
+.btn-sm{padding:6px 14px;font-size:12px;}
+
+/* HEADER */
+header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:58px;position:sticky;top:0;z-index:100;}
+.logo{font-size:17px;font-weight:800;letter-spacing:-.3px;}
+.logo span{color:var(--green);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.user-pill{background:var(--bg3);border:1px solid var(--border);border-radius:100px;padding:5px 14px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);}
+.role-badge{font-size:10px;padding:2px 8px;border-radius:100px;font-family:'DM Mono',monospace;font-weight:600;}
+.role-gerente{background:var(--amber-d);color:var(--amber);}
+.role-colab{background:var(--blue-d);color:var(--blue);}
+
+/* NAV */
+nav{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;overflow-x:auto;}
+.nav-tab{padding:13px 18px;font-size:13px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:'Syne',sans-serif;}
+.nav-tab:hover{color:var(--text2);}
+.nav-tab.active{color:var(--green);border-bottom-color:var(--green);}
+
+/* LAYOUT */
+main{max-width:1120px;margin:0 auto;padding:2rem;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;margin-bottom:1.5rem;}
+.card-title{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:1.25rem;}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;}
+
+/* METRICS */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:1.5rem;}
+.metric{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:1.25rem;position:relative;overflow:hidden;}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--acc,var(--green));}
+.metric-label{font-size:10px;color:var(--text3);margin-bottom:8px;font-family:'DM Mono',monospace;letter-spacing:.05em;text-transform:uppercase;}
+.metric-value{font-size:24px;font-weight:700;font-family:'DM Mono',monospace;}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:4px;font-family:'DM Mono',monospace;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-family:'DM Mono',monospace;}
+td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:13px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+
+/* BADGE */
+.badge{display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;font-family:'DM Mono',monospace;}
+.badge-green{background:var(--green-d);color:var(--green);}
+.badge-red{background:var(--red-d);color:var(--red);}
+.badge-amber{background:var(--amber-d);color:var(--amber);}
+.badge-blue{background:var(--blue-d);color:var(--blue);}
+
+/* VENDA FORM */
+.venda-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;padding:1rem;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);margin:1rem 0;}
+.vp-item{text-align:center;}
+.vp-label{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px;text-transform:uppercase;}
+.vp-value{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;}
+
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem;}
+@media(max-width:700px){.charts-grid{grid-template-columns:1fr;}}
+.chart-wrap{position:relative;height:230px;}
+
+/* LUCRO DO DIA */
+.dia-box{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r-sm);padding:1.25rem;display:flex;flex-direction:column;gap:6px;}
+.dia-header{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.05em;}
+.dia-value{font-size:32px;font-weight:800;font-family:'DM Mono',monospace;}
+.dia-sub{font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;}
+
+/* COLAB CARDS */
+.colab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
+.colab-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:1.25rem;}
+.colab-avatar{width:38px;height:38px;border-radius:50%;background:var(--green-d);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--green);font-family:'DM Mono',monospace;margin-bottom:10px;}
+.colab-name{font-size:14px;font-weight:700;margin-bottom:4px;}
+.colab-meta{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:10px;}
+.colab-stats{display:flex;flex-direction:column;gap:4px;}
+.cs-row{display:flex;justify-content:space-between;font-size:12px;font-family:'DM Mono',monospace;}
+.cs-label{color:var(--text3);}
+
+/* MISC */
+.green{color:var(--green);}
+.red{color:var(--red);}
+.amber{color:var(--amber);}
+.blue{color:var(--blue);}
+.text2{color:var(--text2);}
+.text3{color:var(--text3);}
+.flex-end{display:flex;justify-content:flex-end;gap:8px;}
+.flex-bet{display:flex;justify-content:space-between;align-items:center;}
+.gap-8{display:flex;gap:8px;flex-wrap:wrap;}
+.divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0;}
+.empty{text-align:center;padding:2.5rem;color:var(--text3);font-family:'DM Mono',monospace;font-size:13px;}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:1rem;}
+.loading{display:flex;align-items:center;justify-content:center;padding:2rem;color:var(--text3);font-family:'DM Mono',monospace;font-size:13px;gap:8px;}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.toast{position:fixed;bottom:2rem;right:2rem;background:var(--bg2);border:1px solid var(--green);color:var(--green);padding:12px 20px;border-radius:var(--r-sm);font-size:13px;font-family:'DM Mono',monospace;opacity:0;transform:translateY(8px);transition:all .3s;z-index:999;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.err{border-color:var(--red);color:var(--red);}
+@media(max-width:600px){main{padding:1rem;}header{padding:0 1rem;}nav{padding:0 1rem;}.metrics-grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen" class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">Mega<span>Control</span></div>
+    <div class="auth-sub">Sistema de gestão de megas e lucros</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')" id="tab-register">Criar conta</button>
+    </div>
+    <div id="auth-login">
+      <div class="form-group"><label>Utilizador</label><input id="login-user" placeholder="nome de utilizador" autocomplete="username"></div>
+      <div class="form-group"><label>Palavra-passe</label><input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn btn-green btn-full" onclick="doLogin()">Entrar</button>
+    </div>
+    <div id="auth-register" style="display:none;">
+      <div class="form-group"><label>Nome completo</label><input id="reg-name" placeholder="Teu nome"></div>
+      <div class="form-group"><label>Utilizador</label><input id="reg-user" placeholder="nome de utilizador (sem espaços)"></div>
+      <div class="form-group"><label>Palavra-passe</label><input id="reg-pass" type="password" placeholder="••••••••"></div>
+      <div class="form-group"><label>Código de acesso</label><input id="reg-code" type="password" placeholder="Código fornecido pelo gerente"></div>
+      <button class="btn btn-green btn-full" onclick="doRegister()">Criar conta</button>
+    </div>
+    <div id="auth-loading" style="display:none;" class="loading"><div class="spin"></div> A verificar...</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" style="display:none;">
+  <header>
+    <div class="logo">Mega<span>Control</span></div>
+    <div class="header-right">
+      <span class="user-pill" id="header-user"></span>
+      <span class="role-badge" id="header-role"></span>
+      <button class="btn btn-outline btn-sm" onclick="logout()">Sair</button>
+    </div>
+  </header>
+  <nav id="app-nav"></nav>
+  <main id="app-main"></main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+//  CONFIGURAÇÃO
+// ══════════════════════════════════════════
+const GERENTE_CODE = 'GERENTE2025';   // código para criar conta de gerente
+const COLAB_CODE   = 'VARETA2025';    // código para criar conta de colaborador
+const MB_PACOTE    = 10240;           // MB por pacote enviado ao colaborador
+const CUSTO_PACOTE = 250;             // custo do pacote em MT
+const PRECO_GB     = 25;              // preço de venda padrão por GB
+
+// ══════════════════════════════════════════
+//  STORAGE (localStorage como base de dados partilhada)
+//  Para GitHub Pages: usa localStorage por colaborador
+//  Os dados do gerente ficam guardados no browser
+// ══════════════════════════════════════════
+const DB_KEY = 'mc_db_v2';
+
+function loadDB() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY) || '{"users":[],"vendas":[],"envios":[]}'); }
+  catch { return { users: [], vendas: [], envios: [] }; }
+}
+function saveDB(db) {
+  localStorage.setItem(DB_KEY, JSON.stringify(db));
+}
+
+let db = loadDB();
+let currentUser = null;
+
+// ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
+  event.target.classList.add('active');
+}
+
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pass = document.getElementById('login-pass').value;
+  if (!user || !pass) { toast('Preenche todos os campos', true); return; }
+  db = loadDB();
+  const found = db.users.find(u => u.username === user && u.password === btoa(pass));
+  if (!found) { toast('Utilizador ou palavra-passe incorrectos', true); return; }
+  currentUser = found;
+  startApp();
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const user = document.getElementById('reg-user').value.trim().toLowerCase().replace(/\s/g, '');
+  const pass = document.getElementById('reg-pass').value;
+  const code = document.getElementById('reg-code').value.trim();
+  if (!name || !user || !pass || !code) { toast('Preenche todos os campos', true); return; }
+  db = loadDB();
+  if (db.users.find(u => u.username === user)) { toast('Utilizador já existe', true); return; }
+  let role = null;
+  if (code === GERENTE_CODE) role = 'gerente';
+  else if (code === COLAB_CODE) role = 'colaborador';
+  else { toast('Código de acesso inválido', true); return; }
+  const newUser = { id: Date.now(), name, username: user, password: btoa(pass), role };
+  db.users.push(newUser);
+  saveDB(db);
+  currentUser = newUser;
+  startApp();
+}
+
+function logout() {
+  currentUser = null;
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+
+// ══════════════════════════════════════════
+//  APP START
+// ══════════════════════════════════════════
+function startApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = '';
+  document.getElementById('header-user').textContent = currentUser.name;
+  const rb = document.getElementById('header-role');
+  rb.textContent = currentUser.role === 'gerente' ? '👑 Gerente' : '👤 Colaborador';
+  rb.className = 'role-badge ' + (currentUser.role === 'gerente' ? 'role-gerente' : 'role-colab');
+  buildNav();
+  if (currentUser.role === 'gerente') showPage('painel');
+  else showPage('registar');
+}
+
+function buildNav() {
+  const nav = document.getElementById('app-nav');
+  if (currentUser.role === 'gerente') {
+    nav.innerHTML = `
+      <button class="nav-tab" onclick="showPage('painel')">Painel</button>
+      <button class="nav-tab" onclick="showPage('colaboradores')">Colaboradores</button>
+      <button class="nav-tab" onclick="showPage('historico')">Histórico</button>
+      <button class="nav-tab" onclick="showPage('envios')">Envios de megas</button>
+      <button class="nav-tab" onclick="showPage('config')">Config</button>`;
+  } else {
+    nav.innerHTML = `
+      <button class="nav-tab" onclick="showPage('registar')">Registar venda</button>
+      <button class="nav-tab" onclick="showPage('meu-dia')">Meu dia</button>
+      <button class="nav-tab" onclick="showPage('minhas-vendas')">Minhas vendas</button>`;
+  }
+}
+
+let charts = {};
+function showPage(p) {
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.querySelector(`[onclick="showPage('${p}')"]`);
+  if (tab) tab.classList.add('active');
+  const main = document.getElementById('app-main');
+  db = loadDB();
+  if (p === 'painel') renderPainel(main);
+  else if (p === 'colaboradores') renderColaboradores(main);
+  else if (p === 'historico') renderHistorico(main);
+  else if (p === 'envios') renderEnvios(main);
+  else if (p === 'config') renderConfig(main);
+  else if (p === 'registar') renderRegistar(main);
+  else if (p === 'meu-dia') renderMeuDia(main);
+  else if (p === 'minhas-vendas') renderMinhasVendas(main);
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+const cpMB = () => CUSTO_PACOTE / MB_PACOTE;
+const hoje = () => new Date().toISOString().slice(0, 10);
+const fmt = n => parseFloat(n).toFixed(0);
+const fmtMB = mb => mb >= 1024 ? (mb/1024).toFixed(2) + ' GB' : mb + ' MB';
+
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function colabStats(colabId, dataInicio, dataFim) {
+  let vs = db.vendas.filter(v => v.colabId === colabId);
+  if (dataInicio) vs = vs.filter(v => v.data >= dataInicio);
+  if (dataFim) vs = vs.filter(v => v.data <= dataFim);
+  const mbVendidos = vs.reduce((s, v) => s + v.mbVendidos, 0);
+  const receita = vs.reduce((s, v) => s + v.valorRecebido, 0);
+  const mbEnviados = db.envios.filter(e => e.colabId === colabId).reduce((s, e) => s + e.mb, 0);
+  const custo = mbEnviados * cpMB();
+  const lucro = receita - custo;
+  const lucroEsperado = (mbEnviados / 1024) * PRECO_GB - custo;
+  return { mbVendidos, receita, mbEnviados, custo, lucro, lucroEsperado, vendas: vs };
+}
+
+// ══════════════════════════════════════════
+//  GERENTE — PAINEL
+// ══════════════════════════════════════════
+function renderPainel(main) {
+  const colabs = db.users.filter(u => u.role === 'colaborador');
+  const allStats = colabs.map(c => ({ ...c, ...colabStats(c.id) }));
+
+  const totalLucro = allStats.reduce((s, c) => s + c.lucro, 0);
+  const totalReceita = allStats.reduce((s, c) => s + c.receita, 0);
+  const totalCusto = allStats.reduce((s, c) => s + c.custo, 0);
+  const totalMbVend = allStats.reduce((s, c) => s + c.mbVendidos, 0);
+
+  const vendasHoje = db.vendas.filter(v => v.data === hoje());
+  const lucroHoje = vendasHoje.reduce((s, v) => s + v.valorRecebido, 0) - vendasHoje.reduce((s, v) => {
+    const e = db.envios.filter(e => e.colabId === v.colabId).reduce((a, b) => a + b.mb, 0);
+    return s + (e * cpMB() / Math.max(1, db.vendas.filter(vv => vv.colabId === v.colabId).length));
+  }, 0);
+
+  main.innerHTML = `
+    <div class="metrics-grid">
+      <div class="metric" style="--acc:var(--green)"><div class="metric-label">Lucro total</div><div class="metric-value green">${fmt(totalLucro)} MT</div><div class="metric-sub">Receita: ${fmt(totalReceita)} MT</div></div>
+      <div class="metric" style="--acc:var(--red)"><div class="metric-label">Custo total</div><div class="metric-value red">${fmt(totalCusto)} MT</div><div class="metric-sub">Investimento</div></div>
+      <div class="metric" style="--acc:var(--amber)"><div class="metric-label">MB vendidos</div><div class="metric-value amber">${fmtMB(totalMbVend)}</div><div class="metric-sub">${colabs.length} colaboradores</div></div>
+      <div class="metric" style="--acc:var(--blue)"><div class="metric-label">Vendas hoje</div><div class="metric-value blue">${vendasHoje.length}</div><div class="metric-sub">${fmt(vendasHoje.reduce((s,v)=>s+v.valorRecebido,0))} MT recebidos</div></div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="card"><div class="card-title">Lucro por colaborador</div><div class="chart-wrap"><canvas id="chartLucro"></canvas></div></div>
+      <div class="card"><div class="card-title">Receita vs Custo (MT)</div><div class="chart-wrap"><canvas id="chartRC"></canvas></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Resumo por colaborador — hoje vs total</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Colaborador</th><th>MB Enviados</th><th>MB Vendidos</th><th>Receita total</th><th>Custo</th><th>Lucro total</th><th>Lucro esperado</th><th>Vendas hoje</th><th>Estado</th></tr></thead>
+        <tbody>${allStats.map(c => {
+          const vh = db.vendas.filter(v => v.colabId === c.id && v.data === hoje());
+          const recHoje = vh.reduce((s,v)=>s+v.valorRecebido,0);
+          return `<tr>
+            <td><strong>${c.name}</strong></td>
+            <td class="blue">${fmtMB(c.mbEnviados)}</td>
+            <td class="amber">${fmtMB(c.mbVendidos)}</td>
+            <td class="green">${fmt(c.receita)} MT</td>
+            <td class="red">${fmt(c.custo)} MT</td>
+            <td><strong class="${c.lucro>=0?'green':'red'}">${fmt(c.lucro)} MT</strong></td>
+            <td class="text2">${fmt(c.lucroEsperado)} MT</td>
+            <td>${vh.length > 0 ? `<span class="badge badge-green">${vh.length} venda(s) · ${fmt(recHoje)} MT</span>` : '<span class="text3">—</span>'}</td>
+            <td><span class="badge ${c.lucro>0?'badge-green':c.lucro<0?'badge-red':'badge-amber'}">${c.lucro>0?'Lucro':c.lucro<0?'Prejuízo':'Zero'}</span></td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="9" class="empty">Sem colaboradores ainda</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+
+  if (charts.lucro) charts.lucro.destroy();
+  if (charts.rc) charts.rc.destroy();
+
+  const labels = allStats.map(c => c.name.split(' ')[0]);
+  charts.lucro = new Chart(document.getElementById('chartLucro'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: allStats.map(c => +fmt(c.lucro)), backgroundColor: allStats.map(c => c.lucro >= 0 ? '#00e5a0' : '#ff4d6d'), borderRadius: 5 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#3d4a63' }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3d4a63', callback: v => v + ' MT' }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+  });
+  charts.rc = new Chart(document.getElementById('chartRC'), {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Receita', data: allStats.map(c => +fmt(c.receita)), backgroundColor: '#00e5a0', borderRadius: 5 }, { label: 'Custo', data: allStats.map(c => +fmt(c.custo)), backgroundColor: '#ff4d6d', borderRadius: 5 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#7a86a0', boxWidth: 10, font: { size: 11 } } } }, scales: { x: { ticks: { color: '#3d4a63' }, grid: { color: 'rgba(255,255,255,0.04)' } }, y: { ticks: { color: '#3d4a63', callback: v => v + ' MT' }, grid: { color: 'rgba(255,255,255,0.04)' } } } }
+  });
+}
+
+// ══════════════════════════════════════════
+//  GERENTE — COLABORADORES
+// ══════════════════════════════════════════
+function renderColaboradores(main) {
+  const colabs = db.users.filter(u => u.role === 'colaborador');
+  main.innerHTML = `
+    <div class="card">
+      <div class="card-title">Colaboradores registados (${colabs.length})</div>
+      ${colabs.length ? `<div class="colab-grid">${colabs.map(c => {
+        const st = colabStats(c.id);
+        return `<div class="colab-card">
+          <div class="colab-avatar">${c.name.slice(0,2).toUpperCase()}</div>
+          <div class="colab-name">${c.name}</div>
+          <div class="colab-meta">@${c.username}</div>
+          <div class="colab-stats">
+            <div class="cs-row"><span class="cs-label">MB enviados:</span><span class="blue">${fmtMB(st.mbEnviados)}</span></div>
+            <div class="cs-row"><span class="cs-label">MB vendidos:</span><span class="amber">${fmtMB(st.mbVendidos)}</span></div>
+            <div class="cs-row"><span class="cs-label">Receita:</span><span class="green">${fmt(st.receita)} MT</span></div>
+            <div class="cs-row"><span class="cs-label">Custo:</span><span class="red">${fmt(st.custo)} MT</span></div>
+            <div class="cs-row"><span class="cs-label">Lucro:</span><strong class="${st.lucro>=0?'green':'red'}">${fmt(st.lucro)} MT</strong></div>
+            <div class="cs-row"><span class="cs-label">Lucro esperado:</span><span class="text2">${fmt(st.lucroEsperado)} MT</span></div>
+          </div>
+        </div>`;
+      }).join('')}</div>` : '<div class="empty">Sem colaboradores registados.<br>Partilha o código VARETA2025 para eles criarem conta.</div>'}
+    </div>
+    <div class="card">
+      <div class="card-title">Códigos de acesso</div>
+      <p style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text2);margin-bottom:1rem;">Partilha estes códigos para criação de contas:</p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--r-sm);padding:1rem;font-family:'DM Mono',monospace;">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Código para colaboradores</div>
+          <div style="font-size:18px;font-weight:700;color:var(--blue);">${COLAB_CODE}</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--amber);border-radius:var(--r-sm);padding:1rem;font-family:'DM Mono',monospace;">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;">Código para gerente</div>
+          <div style="font-size:18px;font-weight:700;color:var(--amber);">${GERENTE_CODE}</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+//  GERENTE — HISTÓRICO
+// ══════════════════════════════════════════
+function renderHistorico(main) {
+  const colabs = db.users.filter(u => u.role === 'colaborador');
+  const sorted = [...db.vendas].sort((a,b) => b.data.localeCompare(a.data) || b.id - a.id);
+  main.innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" style="margin:0;">Histórico de vendas</div>
+        <select id="filtro-hist" onchange="renderHistorico(document.getElementById('app-main'))" style="width:auto;">
+          <option value="">Todos os colaboradores</option>
+          ${colabs.map(c => `<option value="${c.id}" ${''}>@${c.username} — ${c.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>MB recebidos</th><th>MB vendidos</th><th>Valor recebido</th><th>Preço/GB</th><th>Lucro da venda</th><th>Notas</th><th></th></tr></thead>
+        <tbody id="hist-body"></tbody>
+      </table></div>
+    </div>`;
+
+  function updateHist() {
+    const fid = parseInt(document.getElementById('filtro-hist')?.value) || 0;
+    const data = fid ? sorted.filter(v => v.colabId === fid) : sorted;
+    document.getElementById('hist-body').innerHTML = data.map(v => {
+      const c = db.users.find(u => u.id === v.colabId);
+      const gbVend = v.mbVendidos / 1024;
+      const custoVenda = v.mbRecebidos * cpMB();
+      const lucroVenda = v.valorRecebido - custoVenda;
+      return `<tr>
+        <td>${v.data}</td>
+        <td>${c?.name || '—'}</td>
+        <td class="blue">${fmtMB(v.mbRecebidos)}</td>
+        <td class="amber">${fmtMB(v.mbVendidos)}</td>
+        <td class="green">${fmt(v.valorRecebido)} MT</td>
+        <td class="text2">${(v.valorRecebido / Math.max(0.001, gbVend)).toFixed(1)} MT/GB</td>
+        <td><strong class="${lucroVenda>=0?'green':'red'}">${fmt(lucroVenda)} MT</strong></td>
+        <td class="text3" style="font-size:11px;">${v.notas || '—'}</td>
+        <td><button class="btn btn-red" onclick="removerVenda(${v.id})">×</button></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="9" class="empty">Sem vendas</td></tr>';
+  }
+  updateHist();
+  document.getElementById('filtro-hist').onchange = updateHist;
+}
+
+function removerVenda(id) {
+  if (!confirm('Remover este registo?')) return;
+  db.vendas = db.vendas.filter(v => v.id !== id);
+  saveDB(db);
+  renderHistorico(document.getElementById('app-main'));
+  toast('Registo removido');
+}
+
+// ══════════════════════════════════════════
+//  GERENTE — ENVIOS
+// ══════════════════════════════════════════
+function renderEnvios(main) {
+  const colabs = db.users.filter(u => u.role === 'colaborador');
+  main.innerHTML = `
+    <div class="card">
+      <div class="card-title">Registar envio de megas a colaborador</div>
+      <div class="form-row">
+        <div class="form-group"><label>Colaborador</label>
+          <select id="env-colab">${colabs.map(c=>`<option value="${c.id}">${c.name} (@${c.username})</option>`).join('')}</select></div>
+        <div class="form-group"><label>MB enviados</label><input type="number" id="env-mb" placeholder="ex: 10240" min="1" oninput="calcEnvio()"></div>
+        <div class="form-group"><label>Data</label><input type="date" id="env-data" value="${hoje()}"></div>
+      </div>
+      <div id="env-preview" style="font-family:'DM Mono',monospace;font-size:13px;color:var(--text2);margin-bottom:1rem;"></div>
+      <div class="flex-end"><button class="btn btn-green" onclick="registarEnvio()">Registar envio</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Histórico de envios</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Data</th><th>Colaborador</th><th>MB enviados</th><th>Custo</th><th>Lucro esperado</th></tr></thead>
+        <tbody>${[...db.envios].sort((a,b)=>b.id-a.id).map(e => {
+          const c = db.users.find(u => u.id === e.colabId);
+          const custo = e.mb * cpMB();
+          const lucroEsp = (e.mb / 1024) * PRECO_GB - custo;
+          return `<tr><td>${e.data}</td><td>${c?.name||'—'}</td><td class="blue">${fmtMB(e.mb)}</td><td class="red">${fmt(custo)} MT</td><td class="${lucroEsp>=0?'green':'red'}">${fmt(lucroEsp)} MT</td></tr>`;
+        }).join('') || '<tr><td colspan="5" class="empty">Sem envios</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+}
+
+function calcEnvio() {
+  const mb = parseFloat(document.getElementById('env-mb')?.value) || 0;
+  const custo = mb * cpMB();
+  const lucroEsp = (mb / 1024) * PRECO_GB - custo;
+  document.getElementById('env-preview').innerHTML = mb > 0 ?
+    `Custo: <span class="red">${fmt(custo)} MT</span> &nbsp;|&nbsp; Lucro esperado (a ${PRECO_GB}MT/GB): <span class="${lucroEsp>=0?'green':'red'}">${fmt(lucroEsp)} MT</span>` : '';
+}
+
+function registarEnvio() {
+  const colabId = parseInt(document.getElementById('env-colab').value);
+  const mb = parseFloat(document.getElementById('env-mb').value) || 0;
+  const data = document.getElementById('env-data').value || hoje();
+  if (!colabId || mb <= 0) { toast('Preenche todos os campos', true); return; }
+  db.envios.push({ id: Date.now(), colabId, mb, data });
+  saveDB(db);
+  toast(`${fmtMB(mb)} enviados com sucesso!`);
+  renderEnvios(document.getElementById('app-main'));
+}
+
+// ══════════════════════════════════════════
+//  GERENTE — CONFIG
+// ══════════════════════════════════════════
+function renderConfig(main) {
+  main.innerHTML = `
+    <div class="card">
+      <div class="card-title">Informações do sistema</div>
+      <div style="font-family:'DM Mono',monospace;font-size:13px;display:flex;flex-direction:column;gap:10px;">
+        <div>Pacote padrão: <span class="blue">${fmtMB(MB_PACOTE)}</span> por <span class="red">${CUSTO_PACOTE} MT</span></div>
+        <div>Custo por MB: <span class="red">${cpMB().toFixed(4)} MT</span></div>
+        <div>Preço de venda padrão: <span class="green">${PRECO_GB} MT/GB</span></div>
+        <div>Lucro esperado por pacote: <span class="green">${fmt((MB_PACOTE/1024)*PRECO_GB - CUSTO_PACOTE)} MT</span></div>
+      </div>
+      <hr class="divider">
+      <div class="card-title">Gestão de dados</div>
+      <div class="gap-8">
+        <button class="btn btn-outline" onclick="exportData()">Exportar dados (JSON)</button>
+        <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">Importar dados (JSON)</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      </div>
+      <hr class="divider">
+      <button class="btn btn-red" onclick="clearAll()">Apagar todos os dados</button>
+    </div>`;
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'megacontrol_' + hoje() + '.json'; a.click();
+  toast('Dados exportados!');
+}
+
+function importData(e) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try { db = JSON.parse(ev.target.result); saveDB(db); toast('Importado!'); showPage('painel'); }
+    catch { toast('Erro no ficheiro', true); }
+  };
+  reader.readAsText(e.target.files[0]);
+}
+
+function clearAll() {
+  if (!confirm('Apagar TUDO? Esta acção é irreversível!')) return;
+  db = { users: [], vendas: [], envios: [] }; saveDB(db);
+  toast('Dados apagados'); showPage('painel');
+}
+
+// ══════════════════════════════════════════
+//  COLABORADOR — REGISTAR VENDA
+// ══════════════════════════════════════════
+function renderRegistar(main) {
+  const meusEnvios = db.envios.filter(e => e.colabId === currentUser.id);
+  const mbTotal = meusEnvios.reduce((s, e) => s + e.mb, 0);
+  const mbVendTotal = db.vendas.filter(v => v.colabId === currentUser.id).reduce((s, v) => s + v.mbVendidos, 0);
+  const saldoMB = mbTotal - mbVendTotal;
+
+  main.innerHTML = `
+    <div class="metrics-grid">
+      <div class="metric" style="--acc:var(--blue)"><div class="metric-label">MB recebidos total</div><div class="metric-value blue">${fmtMB(mbTotal)}</div></div>
+      <div class="metric" style="--acc:var(--amber)"><div class="metric-label">MB vendidos total</div><div class="metric-value amber">${fmtMB(mbVendTotal)}</div></div>
+      <div class="metric" style="--acc:var(--green)"><div class="metric-label">Saldo disponível</div><div class="metric-value ${saldoMB>0?'green':'red'}">${fmtMB(saldoMB)}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Registar nova venda</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>MB que recebeste para esta venda</label>
+          <input type="number" id="v-mb-rec" placeholder="ex: 1024" min="1" oninput="calcVenda()">
+          <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:4px;">1GB = 1024MB · 10GB = 10240MB</span>
+        </div>
+        <div class="form-group">
+          <label>MB que vendeste ao cliente</label>
+          <input type="number" id="v-mb-vend" placeholder="ex: 1024" min="0" oninput="calcVenda()">
+        </div>
+        <div class="form-group">
+          <label>Valor recebido do cliente (MT)</label>
+          <input type="number" id="v-valor" placeholder="ex: 25" min="0" step="0.1" oninput="calcVenda()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data da venda</label>
+          <input type="date" id="v-data" value="${hoje()}">
+        </div>
+        <div class="form-group">
+          <label>Notas (opcional)</label>
+          <input type="text" id="v-notas" placeholder="ex: cliente recorrente">
+        </div>
+      </div>
+
+      <div class="venda-preview" id="v-preview" style="display:none;">
+        <div class="vp-item"><div class="vp-label">Valor recebido</div><div class="vp-value green" id="vp-receita">—</div></div>
+        <div class="vp-item"><div class="vp-label">Custo dos MB</div><div class="vp-value red" id="vp-custo">—</div></div>
+        <div class="vp-item"><div class="vp-label">Lucro desta venda</div><div class="vp-value" id="vp-lucro">—</div></div>
+        <div class="vp-item"><div class="vp-label">Preço/GB efectivo</div><div class="vp-value amber" id="vp-preco">—</div></div>
+        <div class="vp-item"><div class="vp-label">Dif. vs ${PRECO_GB}MT/GB</div><div class="vp-value" id="vp-dif">—</div></div>
+      </div>
+
+      <div class="flex-end" style="margin-top:1rem;">
+        <button class="btn btn-green" onclick="registarVenda()">Registar venda</button>
+      </div>
+    </div>`;
+}
+
+function calcVenda() {
+  const mbRec = parseFloat(document.getElementById('v-mb-rec').value) || 0;
+  const mbVend = parseFloat(document.getElementById('v-mb-vend').value) || 0;
+  const valor = parseFloat(document.getElementById('v-valor').value) || 0;
+  if (mbRec === 0 && valor === 0) { document.getElementById('v-preview').style.display = 'none'; return; }
+  const custo = mbRec * cpMB();
+  const lucro = valor - custo;
+  const gbVend = mbVend / 1024;
+  const precoEfetivo = gbVend > 0 ? valor / gbVend : 0;
+  const dif = precoEfetivo - PRECO_GB;
+  document.getElementById('v-preview').style.display = 'grid';
+  document.getElementById('vp-receita').textContent = fmt(valor) + ' MT';
+  document.getElementById('vp-custo').textContent = fmt(custo) + ' MT';
+  document.getElementById('vp-lucro').textContent = fmt(lucro) + ' MT';
+  document.getElementById('vp-lucro').style.color = lucro >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('vp-preco').textContent = precoEfetivo > 0 ? precoEfetivo.toFixed(1) + ' MT/GB' : '—';
+  document.getElementById('vp-dif').textContent = dif !== 0 ? (dif > 0 ? '+' : '') + dif.toFixed(1) + ' MT' : '=';
+  document.getElementById('vp-dif').style.color = dif >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+function registarVenda() {
+  db = loadDB();
+  const mbRec = parseFloat(document.getElementById('v-mb-rec').value) || 0;
+  const mbVend = parseFloat(document.getElementById('v-mb-vend').value) || 0;
+  const valor = parseFloat(document.getElementById('v-valor').value) || 0;
+  const data = document.getElementById('v-data').value || hoje();
+  const notas = document.getElementById('v-notas').value.trim();
+  if (mbRec <= 0 || valor <= 0) { toast('Preenche os campos obrigatórios', true); return; }
+  db.vendas.push({ id: Date.now(), colabId: currentUser.id, mbRecebidos: mbRec, mbVendidos: mbVend || mbRec, valorRecebido: valor, data, notas });
+  saveDB(db);
+  toast('Venda registada! Lucro: ' + fmt(valor - mbRec * cpMB()) + ' MT');
+  showPage('registar');
+}
+
+// ══════════════════════════════════════════
+//  COLABORADOR — MEU DIA
+// ══════════════════════════════════════════
+function renderMeuDia(main) {
+  db = loadDB();
+  const vendasHoje = db.vendas.filter(v => v.colabId === currentUser.id && v.data === hoje());
+  const mbEnvTotal = db.envios.filter(e => e.colabId === currentUser.id).reduce((s,e)=>s+e.mb,0);
+  const receitaHoje = vendasHoje.reduce((s,v)=>s+v.valorRecebido,0);
+  const mbVendHoje = vendasHoje.reduce((s,v)=>s+v.mbVendidos,0);
+  const custoHoje = vendasHoje.reduce((s,v)=>s+v.mbRecebidos*cpMB(),0);
+  const lucroHoje = receitaHoje - custoHoje;
+  const investimentoTotal = mbEnvTotal * cpMB();
+  const retorno = investimentoTotal > 0 ? ((lucroHoje / investimentoTotal) * 100).toFixed(1) : 0;
+
+  main.innerHTML = `
+    <div class="metrics-grid">
+      <div class="dia-box" style="--acc:var(--green)">
+        <div class="dia-header">💰 Lucro de hoje</div>
+        <div class="dia-value ${lucroHoje>=0?'green':'red'}">${fmt(lucroHoje)} MT</div>
+        <div class="dia-sub">Receita: ${fmt(receitaHoje)} MT · Custo: ${fmt(custoHoje)} MT</div>
+      </div>
+      <div class="dia-box">
+        <div class="dia-header">📦 MB vendidos hoje</div>
+        <div class="dia-value amber">${fmtMB(mbVendHoje)}</div>
+        <div class="dia-sub">${vendasHoje.length} venda(s) registada(s)</div>
+      </div>
+      <div class="dia-box">
+        <div class="dia-header">📊 Retorno sobre investimento</div>
+        <div class="dia-value ${parseFloat(retorno)>=0?'green':'red'}">${retorno}%</div>
+        <div class="dia-sub">Investimento total: ${fmt(investimentoTotal)} MT</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Vendas de hoje — ${new Date().toLocaleDateString('pt-PT')}</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>MB recebidos</th><th>MB vendidos</th><th>Valor recebido</th><th>Preço/GB efectivo</th><th>Diferença vs ${PRECO_GB}MT/GB</th><th>Lucro</th><th>Notas</th></tr></thead>
+        <tbody>${vendasHoje.length ? vendasHoje.map((v,i) => {
+          const gbV = v.mbVendidos/1024;
+          const precoEf = gbV > 0 ? v.valorRecebido/gbV : 0;
+          const dif = precoEf - PRECO_GB;
+          const lucroV = v.valorRecebido - v.mbRecebidos * cpMB();
+          return `<tr>
+            <td class="text3">${i+1}</td>
+            <td class="blue">${fmtMB(v.mbRecebidos)}</td>
+            <td class="amber">${fmtMB(v.mbVendidos)}</td>
+            <td class="green">${fmt(v.valorRecebido)} MT</td>
+            <td>${precoEf > 0 ? precoEf.toFixed(1)+' MT/GB' : '—'}</td>
+            <td class="${dif>=0?'green':'red'}">${dif >= 0?'+':''}${dif.toFixed(1)} MT</td>
+            <td><strong class="${lucroV>=0?'green':'red'}">${fmt(lucroV)} MT</strong></td>
+            <td class="text3" style="font-size:11px;">${v.notas||'—'}</td>
+          </tr>`;
+        }).join('') : '<tr><td colspan="8" class="empty">Nenhuma venda registada hoje</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════════
+//  COLABORADOR — MINHAS VENDAS
+// ══════════════════════════════════════════
+function renderMinhasVendas(main) {
+  db = loadDB();
+  const minhas = [...db.vendas.filter(v => v.colabId === currentUser.id)].sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id);
+  const st = colabStats(currentUser.id);
+  main.innerHTML = `
+    <div class="metrics-grid">
+      <div class="metric" style="--acc:var(--green)"><div class="metric-label">Receita total</div><div class="metric-value green">${fmt(st.receita)} MT</div></div>
+      <div class="metric" style="--acc:var(--red)"><div class="metric-label">Custo total</div><div class="metric-value red">${fmt(st.custo)} MT</div></div>
+      <div class="metric" style="--acc:${st.lucro>=0?'var(--green)':'var(--red)'}"><div class="metric-label">Lucro total</div><div class="metric-value ${st.lucro>=0?'green':'red'}">${fmt(st.lucro)} MT</div></div>
+      <div class="metric" style="--acc:var(--amber)"><div class="metric-label">Lucro esperado</div><div class="metric-value amber">${fmt(st.lucroEsperado)} MT</div><div class="metric-sub">base ${PRECO_GB}MT/GB</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Todas as minhas vendas (${minhas.length})</div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Data</th><th>MB recebidos</th><th>MB vendidos</th><th>Valor recebido</th><th>Preço/GB</th><th>Lucro</th><th>Notas</th></tr></thead>
+        <tbody>${minhas.map(v => {
+          const gbV = v.mbVendidos/1024;
+          const precoEf = gbV > 0 ? v.valorRecebido/gbV : 0;
+          const lucroV = v.valorRecebido - v.mbRecebidos * cpMB();
+          return `<tr>
+            <td>${v.data}</td>
+            <td class="blue">${fmtMB(v.mbRecebidos)}</td>
+            <td class="amber">${fmtMB(v.mbVendidos)}</td>
+            <td class="green">${fmt(v.valorRecebido)} MT</td>
+            <td class="text2">${precoEf > 0 ? precoEf.toFixed(1)+' MT/GB' : '—'}</td>
+            <td><strong class="${lucroV>=0?'green':'red'}">${fmt(lucroV)} MT</strong></td>
+            <td class="text3" style="font-size:11px;">${v.notas||'—'}</td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="7" class="empty">Sem vendas registadas</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+}
+
+// enter key no login
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
